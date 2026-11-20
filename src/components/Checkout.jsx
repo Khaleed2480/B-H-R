@@ -15,12 +15,13 @@ const loadPaystack = () => (loader ||= new Promise((resolve, reject) => {
 
 const naira = (usd) => `₦${Math.round(usd * RATE).toLocaleString()}`;
 
+// Outlined box: see-through fill on a dark panel, always WHITE typed text
 const Input = ({ label, ...p }) => (
-  <label className="block text-sm font-semibold">
+  <label className="block text-sm font-semibold text-sand">
     {label}
     <input {...p} required
-      style={{ color: '#0d0907', WebkitTextFillColor: '#0d0907', caretColor: '#0d0907', backgroundColor: 'transparent' }}
-      className="mt-1 w-full rounded-lg border-2 border-ink bg-transparent px-3 py-3 text-base font-normal shadow-[3px_3px_0_0_#0d0907] outline-none transition placeholder:text-ink/60 focus:border-red-700 focus:shadow-[4px_4px_0_0_#b91c1c]" />
+      style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff', caretColor: '#ffffff' }}
+      className="mt-1 w-full rounded-lg border-2 border-sand/60 bg-white/10 px-3 py-3 text-base font-normal shadow-[0_8px_20px_rgba(0,0,0,0.5),0_0_0_3px_rgba(244,232,216,0.12)] outline-none transition placeholder:text-sand/60 focus:border-white focus:bg-white/15 focus:shadow-[0_8px_20px_rgba(0,0,0,0.5),0_0_0_4px_rgba(226,54,45,0.5)]" />
   </label>
 );
 
@@ -72,22 +73,23 @@ export default function Checkout({ open, onClose, cart, user, onPaid }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-black/85 p-4" role="dialog" aria-modal="true" aria-label="Checkout">
-      <div className="field-light my-auto w-full max-w-3xl rounded-2xl bg-sand text-ink" style={{ colorScheme: 'light' }}>
+    <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-black p-4" role="dialog" aria-modal="true" aria-label="Checkout">
+      <div className="checkout-dark my-auto w-full max-w-3xl rounded-2xl border border-white/20 bg-gradient-to-br from-[#2e1c13] via-[#1b130f] to-[#0d0907] text-sand shadow-2xl"
+        style={{ colorScheme: 'dark' }}>
         {done ? (
           <div className="p-8 text-center">
             <p className="text-3xl font-bold">Payment received</p>
             <p className="mt-3 text-base">Thank you, {f.name.split(' ')[0] || 'friend'}. Your order is confirmed.</p>
-            <p className="mt-4 text-sm text-ink/80">Payment reference</p>
-            <p className="mt-1 select-all rounded-lg border-2 border-ink/30 bg-white px-4 py-3 font-mono text-base">{done.ref}</p>
-            <p className="mt-3 text-sm text-ink/80">Keep this reference for any question about your order.</p>
-            <button onClick={onClose} className="mt-6 rounded-lg bg-ink px-8 py-3 text-base font-semibold text-sand hover:bg-black">Back to the store</button>
+            <p className="mt-4 text-sm text-sand/80">Payment reference</p>
+            <p className="mt-1 select-all rounded-lg border-2 border-sand/50 bg-white/10 px-4 py-3 font-mono text-base text-white">{done.ref}</p>
+            <p className="mt-3 text-sm text-sand/80">Keep this reference for any question about your order.</p>
+            <button onClick={onClose} className="mt-6 rounded-lg bg-sand px-8 py-3 text-base font-semibold text-ink hover:bg-white">Back to the store</button>
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between border-b border-ink/20 p-5">
+            <div className="flex items-center justify-between border-b border-white/20 p-5">
               <h2 className="text-xl font-bold">Checkout</h2>
-              <button onClick={onClose} aria-label="Close checkout" className="grid size-10 place-items-center rounded-full border-2 border-ink/30 text-lg hover:bg-ink/10">✕</button>
+              <button onClick={onClose} aria-label="Close checkout" className="grid size-10 place-items-center rounded-full border-2 border-white/30 text-lg hover:bg-white/10">✕</button>
             </div>
             <div className="grid gap-8 p-5 md:grid-cols-[1.2fr_1fr]">
               <form onSubmit={pay} className="space-y-4">
@@ -100,12 +102,12 @@ export default function Checkout({ open, onClose, cart, user, onPaid }) {
                   <Input label="State" value={f.state} onChange={set('state')} autoComplete="address-level1" />
                 </div>
                 <Input label="Country" value={f.country} onChange={set('country')} autoComplete="country-name" />
-                <p className="text-sm text-ink/80">Receipt email: <b>{user.email}</b></p>
+                <p className="text-sm text-sand/80">Receipt email: <b className="text-white">{user.email}</b></p>
                 {err && <p role="alert" className="rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-900">{err}</p>}
-                <button disabled={busy} className="w-full rounded-lg bg-red-700 py-4 text-base font-semibold text-white transition hover:bg-red-800 disabled:opacity-60">
+                <button disabled={busy} className="w-full rounded-lg bg-red-700 py-4 text-base font-semibold text-white transition hover:bg-red-600 disabled:opacity-60">
                   {busy ? 'Opening payment…' : `Pay ₦${totalNaira.toLocaleString()} with Paystack`}
                 </button>
-                <p className="text-center text-xs text-ink/70">Secure payment by Paystack. Card details never touch this website.</p>
+                <p className="text-center text-xs text-sand/70">Secure payment by Paystack. Card details never touch this website.</p>
               </form>
 
               <div>
@@ -116,18 +118,18 @@ export default function Checkout({ open, onClose, cart, user, onPaid }) {
                       <Img src={i.p.image} alt={i.p.name} className="size-16 shrink-0 rounded-lg" />
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold">{i.p.name}</p>
-                        <p className="text-ink/80">Size {i.size} · Qty {i.qty}</p>
+                        <p className="text-sand/80">Size {i.size} · Qty {i.qty}</p>
                       </div>
                       <span className="font-semibold">{naira(i.p.price * i.qty)}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="mt-4 space-y-1 border-t border-ink/20 pt-3 text-sm">
+                <div className="mt-4 space-y-1 border-t border-white/20 pt-3 text-sm">
                   <div className="flex justify-between"><span>Subtotal</span><span>{naira(sub)}</span></div>
                   <div className="flex justify-between"><span>Express shipping</span><span>{ship ? naira(ship) : 'Free'}</span></div>
                   <div className="flex justify-between pt-2 text-lg font-bold"><span>Total</span><span>₦{totalNaira.toLocaleString()}</span></div>
                 </div>
-                <p className="mt-3 text-xs text-ink/70">Payments are charged in Naira (₦), even if you browse in USD.</p>
+                <p className="mt-3 text-xs text-sand/70">Payments are charged in Naira (₦), even if you browse in USD.</p>
               </div>
             </div>
           </>
