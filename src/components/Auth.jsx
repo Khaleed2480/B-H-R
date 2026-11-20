@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup,
-  sendPasswordResetEmail, updateProfile,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail,
+  updateProfile, setPersistence, browserLocalPersistence, browserSessionPersistence,
 } from 'firebase/auth';
 import { auth, google, configured, toUser } from '../firebase';
 import Img from './Img';
@@ -10,6 +10,8 @@ import { pic } from '../data/products';
 
 // Street scenes (5, 18, 23, 24) mixed with product shots
 const COLS = [[5, 7, 10, 28], [18, 2, 16, 26], [23, 20, 27, 3], [24, 22, 30, 4]];
+const IN_APP = typeof navigator !== 'undefined' && /Telegram|FBAN|FBAV|Instagram|Snapchat|TikTok|; wv\)/i.test(navigator.userAgent);
+const OPEN_BROWSER = 'Google sign-in does not work inside this app. Open the page in Safari or Chrome and try again.';
 
 const MSG = {
   'auth/email-already-in-use': 'That email already has an account. Log in instead.',
@@ -23,13 +25,15 @@ const MSG = {
   'auth/popup-blocked': 'Your browser blocked the Google window. Allow pop-ups and try again.',
   'auth/unauthorized-domain': 'This website address is not approved yet. In Firebase, add it under Authentication → Settings → Authorized domains.',
   'auth/operation-not-allowed': 'This sign-in method is not turned on in Firebase yet.',
+  'auth/operation-not-supported-in-this-environment': OPEN_BROWSER,
+  'auth/web-storage-unsupported': OPEN_BROWSER,
 };
 const QUIET = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request'];
 
-const Field = ({ label, right, ...p }) => (
+const Field = ({ label, right, name, ...p }) => (
   <label className="block text-sm">
     <span className="mb-1 flex items-center justify-between text-sand/70">{label}{right}</span>
-    <input {...p} required className="w-full rounded-lg border border-white/10 bg-ink px-3 py-2.5 text-sand placeholder:text-sand/30" />
+    <input {...p} id={name} name={name} required className="w-full rounded-lg border border-white/10 bg-ink px-3 py-2.5 text-sand placeholder:text-sand/30" />
   </label>
 );
 
@@ -41,9 +45,10 @@ const TEXT = {
 
 export default function Auth({ onDone }) {
   const [phase, setPhase] = useState('intro');
-  const [mode, setMode] = useState('signup');
+  const [mode, setMode] = useState('login');
   const [f, setF] = useState({ name: '', email: '', password: '' });
   const [show, setShow] = useState(false);
+  const [keep, setKeep] = useState(true);
   const [err, setErr] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -56,13 +61,18 @@ export default function Auth({ onDone }) {
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const go = (m) => { setMode(m); setErr(''); setNote(''); };
 
-  const run = async (fn) => {
+  const run = async (fn, persist = true) => {
     setErr(''); setNote('');
     if (!configured) return setErr('Firebase is not connected yet. Add your keys to the .env file, then restart npm run dev.');
     setBusy(true);
-    try { await fn(); }
-    catch (e) { if (!QUIET.includes(e.code)) setErr(MSG[e.code] || 'Something went wrong. Try again.'); }
-    finally { setBusy(false); }
+    try {
+      if (persist) await setPersistence(auth, keep ? browserLocalPersistence : browserSessionPersistence);
+      await fn();
+    } catch (e) {
+      if (!QUIET.includes(e.code)) setErr(MSG[e.code] || 'Something went wrong. Try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const submit = (e) => {
@@ -83,7 +93,7 @@ export default function Auth({ onDone }) {
         return;
       }
       await signInWithEmailAndPassword(auth, email, f.password);
-    });
+    }, mode !== 'reset');
   };
 
   const withGoogle = () => run(() => signInWithPopup(auth, google));
@@ -109,7 +119,7 @@ export default function Auth({ onDone }) {
         <div className="absolute inset-0 grid place-items-center p-6">
           <div className="rise text-center">
             <Logo size="lg" />
-            <p className="mt-4 text-sand/75">Black Boy with Red Hat</p>
+            <p className="mt-4 text-sand/75">Black Boy with Red Heart</p>
           </div>
           <button onClick={() => setPhase('form')} className="absolute bottom-8 rounded-full border border-white/25 px-5 py-2 text-sm text-sand/80 hover:bg-white/10">Skip</button>
         </div>
@@ -125,7 +135,7 @@ export default function Auth({ onDone }) {
             {mode !== 'reset' && (
               <>
                 <button type="button" onClick={withGoogle} disabled={busy}
-                  className="mt-5 flex w-full items-center justify-center gap-3 rounded-lg border border-white/15 bg-white py-3 text-sm font-medium text-ink transition hover:bg-sand disabled:opacity-60">
+                  className="mt-5 flex w-full items-center justify-center gap-3 rounded-lg border border-white/15 bg-white py-3 text-sm font-medium text-neutral-900 transition hover:bg-sand disabled:opacity-60">
                   <svg viewBox="0 0 48 48" className="size-5" aria-hidden>
                     <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" />
                     <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z" />
@@ -134,15 +144,16 @@ export default function Auth({ onDone }) {
                   </svg>
                   Continue with Google
                 </button>
+                {IN_APP && <p className="mt-2 text-center text-xs text-sand/60">{OPEN_BROWSER}</p>}
                 <div className="my-5 flex items-center gap-3 text-xs text-sand/40"><span className="h-px flex-1 bg-white/10" />or use email<span className="h-px flex-1 bg-white/10" /></div>
               </>
             )}
 
-            <form onSubmit={submit} className={`space-y-4 ${mode === 'reset' ? 'mt-5' : ''}`}>
-              {mode === 'signup' && <Field label="Full name" value={f.name} onChange={set('name')} autoComplete="name" />}
-              <Field label="Email" type="email" value={f.email} onChange={set('email')} autoComplete="email" />
+            <form onSubmit={submit} method="post" className={`space-y-4 ${mode === 'reset' ? 'mt-5' : ''}`}>
+              {mode === 'signup' && <Field label="Full name" name="name" value={f.name} onChange={set('name')} autoComplete="name" />}
+              <Field label="Email" name="email" type="email" value={f.email} onChange={set('email')} autoComplete="username" inputMode="email" />
               {mode !== 'reset' && (
-                <Field label="Password" type={show ? 'text' : 'password'} value={f.password} onChange={set('password')}
+                <Field label="Password" name="password" type={show ? 'text' : 'password'} value={f.password} onChange={set('password')}
                   autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   placeholder={mode === 'signup' ? 'At least 8 characters' : ''}
                   right={
@@ -151,6 +162,12 @@ export default function Auth({ onDone }) {
                       {mode === 'login' && <button type="button" onClick={() => go('reset')} className="text-sand/60 hover:text-sand">Forgot password?</button>}
                     </span>
                   } />
+              )}
+              {mode !== 'reset' && (
+                <label className="flex items-center gap-2 text-sm text-sand/70">
+                  <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="size-4 accent-crimson" />
+                  Keep me signed in
+                </label>
               )}
               {err && <p role="alert" className="text-sm text-crimson">{err}</p>}
               {note && <p role="status" className="text-sm text-sand">{note}</p>}
