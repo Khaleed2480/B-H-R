@@ -32,3 +32,10 @@ body { background: var(--color-ink); color: var(--color-sand); font-family: var(
   * { transition-duration: .01ms !important }
 }
 :focus-visible { outline: 2px solid var(--color-crimson); outline-offset: 2px; }
+/* Keeps typed text visible when the browser autofills the checkout form */
+.field-light input:-webkit-autofill,
+.field-light input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0d0907;
+  box-shadow: 0 0 0 1000px #f4e8d8 inset;
+  transition: background-color 9999s ease-out;
+}

@@ -18,7 +18,9 @@ const naira = (usd) => `₦${Math.round(usd * RATE).toLocaleString()}`;
 const Input = ({ label, ...p }) => (
   <label className="block text-sm font-semibold">
     {label}
-    <input {...p} required className="mt-1 w-full rounded-lg border-2 border-ink/30 bg-white px-3 py-3 text-base font-normal text-ink placeholder:text-ink/45 focus:border-ink" />
+    <input {...p} required
+      style={{ color: '#0d0907', WebkitTextFillColor: '#0d0907', caretColor: '#0d0907', backgroundColor: 'transparent' }}
+      className="mt-1 w-full rounded-lg border-2 border-ink bg-transparent px-3 py-3 text-base font-normal shadow-[3px_3px_0_0_#0d0907] outline-none transition placeholder:text-ink/60 focus:border-red-700 focus:shadow-[4px_4px_0_0_#b91c1c]" />
   </label>
 );
 
@@ -71,7 +73,7 @@ export default function Checkout({ open, onClose, cart, user, onPaid }) {
 
   return (
     <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-black/85 p-4" role="dialog" aria-modal="true" aria-label="Checkout">
-      <div className="my-auto w-full max-w-3xl rounded-2xl bg-sand text-ink">
+      <div className="field-light my-auto w-full max-w-3xl rounded-2xl bg-sand text-ink" style={{ colorScheme: 'light' }}>
         {done ? (
           <div className="p-8 text-center">
             <p className="text-3xl font-bold">Payment received</p>
