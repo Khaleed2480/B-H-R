@@ -12,6 +12,7 @@ import About from './components/About';
 import Footer from './components/Footer';
 import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
+import Checkout from './components/Checkout';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -21,6 +22,7 @@ export default function App() {
   const [view, setView] = useState(null); // { p, size }
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   useEffect(() => {
     if (!auth) return;
@@ -44,15 +46,15 @@ export default function App() {
   const setQty = (key, qty) => setCart((c) => (qty < 1 ? c.filter((i) => i.key !== key) : c.map((i) => (i.key === key ? { ...i, qty } : i))));
   const logout = async () => {
     await signOut(auth);
-    setCart([]); setCartOpen(false); setView(null);
+    setCart([]); setCartOpen(false); setCheckoutOpen(false); setView(null);
   };
 
   useEffect(() => {
-    document.body.style.overflow = view || cartOpen ? 'hidden' : '';
-    const esc = (e) => e.key === 'Escape' && (setView(null), setCartOpen(false));
+    document.body.style.overflow = view || cartOpen || checkoutOpen ? 'hidden' : '';
+    const esc = (e) => e.key === 'Escape' && (setView(null), setCartOpen(false), setCheckoutOpen(false));
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
-  }, [view, cartOpen]);
+  }, [view, cartOpen, checkoutOpen]);
 
   if (!ready) return <div className="grid min-h-screen place-items-center"><Logo size="md" /></div>;
   if (!user) return <Auth onDone={setUser} />;
@@ -69,7 +71,9 @@ export default function App() {
       <About />
       <Footer />
       {view && <ProductModal key={view.p.id} p={view.p} initialSize={view.size} money={money} onClose={() => setView(null)} onAdd={add} />}
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} setQty={setQty} money={money} />
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} setQty={setQty} money={money}
+        onCheckout={() => { setCartOpen(false); setCheckoutOpen(true); }} />
+      <Checkout open={checkoutOpen} onClose={() => setCheckoutOpen(false)} cart={cart} user={user} onPaid={() => setCart([])} />
     </div>
   );
 }
